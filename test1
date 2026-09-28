@@ -1,0 +1,160 @@
+ Power BI Advanced – Security (RLS & Azure AD Integration)
+TASK 1 — Implement Static Row-Level Security (RLS)
+Objective:
+Create RLS roles that restrict data for specific users based on region.
+
+Step 1 — Open Model View
+Left panel → Model View
+
+Select table:
+
+SalesTable
+Step 2 — Create RLS Role
+Modeling → Manage Roles → Create:
+
+Role Name: North_Region
+Add filter:
+
+Column:
+
+SalesTable[Region]
+Condition:
+
+SalesTable[Region] = "North"
+Step 3 — Validate Role
+Modeling → View As Roles → Select:
+
+North_Region
+Your visuals should now show only North region records.
+
+Example (Boxed)
++----------+-----------+
+| Region   | Sales     |
++----------+-----------+
+| North    | 15,000    |
+| North    | 18,000    |
++----------+-----------+
+(All other regions hidden)
+Hint:
+Static RLS is ideal when security rules do not depend on login identity.
+
+
+
+TASK 2 — Implement Dynamic RLS (User-Specific Security)
+Objective:
+Restrict data based on the logged-in user using USERPRINCIPALNAME().
+
+Step 1 — Create a Security Table
+Create a table in Power BI:
+
+SecurityTable
+Columns:
+UserEmail | AllowedRegion
+Example:
+
+rahul@abc.com | North
+sita@abc.com  | South
+Step 2 — Establish Relationship
+Connect:
+
+SecurityTable[AllowedRegion] → SalesTable[Region]
+Relationship:
+
+Many-to-One (Single)
+Step 3 — Create Dynamic RLS Role
+Modeling → Manage Roles → Create:
+
+Role Name: Dynamic_RLS
+Filter on SecurityTable:
+
+SecurityTable[UserEmail] = USERPRINCIPALNAME()
+Step 4 — Test Role
+Modeling → View As → Other user:
+
+rahul@abc.com
+You should see only North region data.
+
+Expected Result (Boxed)
+Logged in as: sita@abc.com
+Visible Region: South
+All Other Regions: Hidden
+Hint:
+Dynamic RLS is used in enterprise dashboards where each user views only their assigned slice.
+
+TASK 3 — Publishing & Assigning Security in Power BI Service
+Objective:
+Publish the report and map real users to RLS roles.
+
+
+
+Step 1 — Publish Report
+Home → Publish → Select workspace.
+
+Step 2 — Assign Users to RLS Roles
+Power BI Service → Workspace → Datasets
+
+Click dataset → Security
+
+Add users:
+
+North_Region → rahul@abc.com
+Dynamic_RLS → Add organization users
+Step 3 — Validate Security Online
+Dataset → Security → Test As Role
+
+Choose:
+
+rahul@abc.com
+Dashboard updates based on RLS.
+
+RLS Assignment Summary (Boxed)
++-------------------+---------------------------+ 
+| Role              | Users                     |
++-------------------+---------------------------+
+| North_Region      | rahul@abc.com             |
+| Dynamic_RLS       | sita@abc.com, team leads  |
++-------------------+---------------------------+
+Hint:
+RLS works only when using a workspace with Pro or Premium licensing.
+
+TASK 4 — Azure AD Integration with Power BI
+Objective:
+Use Azure Active Directory groups for scalable enterprise security.
+
+Step 1 — Create Azure AD Security Group (Admin Step)
+Azure Portal → Azure Active Directory → Groups → New Group
+
+Enter:
+
+Group Type: Security  
+Group Name: PowerBI-North  
+Members: Add relevant users
+Step 2 — Map AAD Group to RLS Role
+Go to:
+
+Power BI Service → Dataset → Security
+
+Assign:
+
+Role: North_Region  
+AAD Group: PowerBI-North
+Step 3 — Test AAD-Based Security
+“Test as role” → select AAD group.
+
+Should display only North region.
+
+
+
+Step 4 — Apply AAD for Dynamic RLS
+Use:
+
+SecurityTable[UserEmail] IN VALUES(SecurityAADGroup[Email])
+Azure AD Integration Summary (Boxed)
++------------------------------+-----------------------------+
+| Azure AD Group               | Power BI Role               |
++------------------------------+-----------------------------+
+| PowerBI-North                | North_Region                |
+| PowerBI-South                | South_Region                |
++------------------------------+-----------------------------+
+Hint:
+Using AAD groups avoids manually adding/removing users in Power BI roles.
